@@ -3,6 +3,8 @@ kind: Pipeline
 metadata:
   name: your-pipeline-name
 spec:
+  workspaces:
+    - name: pipeline-workspace  # Define the workspace here
   tasks:
     - name: clone
       workspaces:
@@ -21,7 +23,14 @@ spec:
         - name: source
           workspace: pipeline-workspace
       taskRef:
-        name: lint-task
+        name: flake8
+      params:
+        - name: image
+          value: "python:3.9-slim"
+        - name: args
+          value: ["--count", "--max-complexity=10", "--max-line-length=127", "--statistics"]
+      runAfter:
+        - clone
 
     - name: tests
       workspaces:
@@ -37,5 +46,23 @@ spec:
       runAfter:
         - clone
 
-    # Add more tasks here if needed
+    - name: deploy
+      workspaces:
+        - name: manifest-dir
+          workspace: pipeline-workspace
+      taskRef:
+        name: openshift-client
+        kind: ClusterTask
+      params:
+        - name: SCRIPT
+          value: |
+            echo "Updating manifest..."
+            sed -i "s|IMAGE_NAME_HERE|$(params.build-image)|g" deploy/deployment.yaml
+            cat deploy/deployment.yaml
+            echo "Deploying to OpenShift..."
+            oc apply -f deploy/
+            oc get pods -l app=accounts
+      runAfter:
+        - build
 
+    # Add more tasks here if needed
