@@ -46,6 +46,15 @@ spec:
       runAfter:
         - clone
 
+    - name: build
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      taskRef:
+        name: your-build-task  # Replace with your actual build task name
+      params:
+        # Add any necessary parameters for the build task here
+
     - name: deploy
       workspaces:
         - name: manifest-dir
