@@ -38,10 +38,11 @@ class TestAccountService(TestCase):
     @classmethod
     def tearDownClass(cls):
         """Runs once before test suite"""
+        pass  # Add teardown logic if needed
 
     def setUp(self):
         """Runs before each test"""
-        db.session.query(Account).delete()  # clean up the last tests
+        db.session.query(Account).delete()  # Clean up from last tests
         db.session.commit()
 
         self.client = app.test_client()
@@ -87,7 +88,7 @@ class TestAccountService(TestCase):
         self.assertEqual(data["status"], "OK")
 
     def test_create_account(self):
-        """It should Create a new Account"""
+        """It should create a new Account"""
         account = AccountFactory()
         response = self.client.post(
             BASE_URL,
@@ -109,12 +110,12 @@ class TestAccountService(TestCase):
         self.assertEqual(new_account["date_joined"], str(account.date_joined))
 
     def test_bad_request(self):
-        """It should not Create an Account when sending the wrong data"""
+        """It should not create an Account when sending the wrong data"""
         response = self.client.post(BASE_URL, json={"name": "not enough data"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_unsupported_media_type(self):
-        """It should not Create an Account when sending the wrong media type"""
+        """It should not create an Account when sending the wrong media type"""
         account = AccountFactory()
         response = self.client.post(
             BASE_URL,
@@ -123,4 +124,21 @@ class TestAccountService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
-    # ADD YOUR TEST CASES HERE ...
+    def test_get_account(self):
+        """It should read a single Account"""
+        account = self._create_accounts(1)[0]
+        resp = self.client.get(
+            f"{BASE_URL}/{account.id}", content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(data["name"], account.name)
+
+    def test_get_account_not_found(self):
+        """It should not Read an Account that is not found"""
+        # Send a self.client.get() request to the BASE_URL with an invalid account number (e.g., 0)
+        resp = self.client.get(f"{BASE_URL}/0")  # Utiliser un ID qui n'existe pas
+        # Assert that the resp.status_code is status.HTTP_404_NOT_FOUND
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+# ... [autres méthodes et si besoin, exécution de unittest] ...
